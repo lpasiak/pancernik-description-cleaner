@@ -75,6 +75,25 @@ def unwrap_p_in_li(soup):
         for p in li.find_all('p'):
             p.unwrap()
 
+def unwrap_p_with_only_img(soup):
+    for p in soup.find_all('p'):
+        contents = [c for c in p.contents if not isinstance(c, NavigableString) or c.strip()]
+        if len(contents) == 1 and isinstance(contents[0], Tag) and contents[0].name == 'img':
+            print(f"🪄 Unwrapping <p> around <img>: {p}")
+            p.unwrap()
+
+def wrap_h3_content_in_em(soup):
+    for h3 in soup.find_all('h3'):
+        contents = h3.contents
+        if len(contents) == 1 and isinstance(contents[0], Tag) and contents[0].name == 'em':
+            continue  # already wrapped
+        text = h3.get_text(strip=True)
+        h3.clear()
+        em = soup.new_tag('em')
+        em.string = text
+        h3.append(em)
+        print(f"✨ Wrapped <h3> content in <em>: {h3}")
+
 def clean_html(raw_html):
     soup = BeautifulSoup(raw_html, "html.parser")
 
@@ -113,6 +132,8 @@ def clean_html(raw_html):
 
     flatten_nested_tags(soup)
     unwrap_p_in_li(soup)
+    unwrap_p_with_only_img(soup)
+    wrap_h3_content_in_em(soup)  # ✅ NEW function call here
 
     print(f"🖼️ Final <img> count: {len(soup.find_all('img'))}")
     for i, tag in enumerate(soup.find_all('img'), 1):
