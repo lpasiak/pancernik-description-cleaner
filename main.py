@@ -18,6 +18,6 @@ all_outlets['new_description'] = all_outlets['description'].apply(clean_html)
 
 print(f'Saving {len(all_outlets)} to an excel file')
 
-all_outlets.to_excel(output_file)
+all_outlets.to_excel(output_file, index=False)
 
 print('Finished!')

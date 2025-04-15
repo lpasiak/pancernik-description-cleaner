@@ -68,16 +68,25 @@ def add_beta_classes(soup):
 def clean_html(raw_html):
     soup = BeautifulSoup(raw_html, "html.parser")
 
-    product_info_div = soup.find("div", class_="product-info")
-    placeholder = "___PRODUCT_INFO_PLACEHOLDER___"
-    if product_info_div:
-        preserved_product_info = str(product_info_div)
-        product_info_div.replace_with(placeholder)
-    else:
-        preserved_product_info = ""
+    preserved_blocks = []
+
+    # Preserve all .product-info blocks
+    for i, div in enumerate(soup.find_all("div", class_="product-info")):
+        placeholder = f"___PRODUCT_INFO_PLACEHOLDER_{i}___"
+        preserved_blocks.append((placeholder, str(div)))
+        div.replace_with(placeholder)
+
+    # Preserve all .fx-iframeContainer blocks
+    for i, div in enumerate(soup.find_all("div", class_="fx-iframeContainer")):
+        placeholder = f"___IFRAME_CONTAINER_PLACEHOLDER_{i}___"
+        preserved_blocks.append((placeholder, str(div)))
+        div.replace_with(placeholder)
 
     for tag in soup.find_all():
         if tag.name == 'br':
+            parent = tag.find_parent()
+            if parent and parent.name in ['h2', 'h3']:
+                continue  # keep <br> inside <h2> or <h3>
             tag.decompose()
             continue
         convert_span_to_p(tag)
@@ -109,7 +118,7 @@ def clean_html(raw_html):
     cleaned_lines = [line.strip() for line in lines if line.strip()]
     html_minified = '\n'.join(cleaned_lines)
 
-    if preserved_product_info:
-        html_minified = html_minified.replace(placeholder, preserved_product_info)
+    for placeholder, content in preserved_blocks:
+        html_minified = html_minified.replace(placeholder, content)
 
     return html_minified
