@@ -66,6 +66,10 @@ def add_beta_classes(soup):
                 tag['class'] = existing_classes + [beta_class]
 
 def clean_html(raw_html):
+    # Normalize self-closing <br/> and <hr/> to standard <br> and <hr>
+    raw_html = raw_html.replace('<br/>', '<br>').replace('<br />', '<br>')
+    raw_html = raw_html.replace('<hr/>', '<hr>').replace('<hr />', '<hr>')
+
     soup = BeautifulSoup(raw_html, "html.parser")
 
     preserved_blocks = []
