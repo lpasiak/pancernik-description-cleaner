@@ -2,14 +2,14 @@ from bs4 import BeautifulSoup, NavigableString, Tag
 import os
 
 # Allowed tags and attributes
-ALLOWED_TAGS = {'h2', 'h3', 'p', 'strong', 'em', 'img', 'hr', 'ul', 'li'}
+ALLOWED_TAGS = {'h2', 'h3', 'p', 'strong', 'em', 'img', 'hr', 'ul', 'li', 'br'}
 ALLOWED_ATTRS = {
     'img': ['src', 'alt']
 }
 
 def convert_span_to_p(tag):
     if tag.name in ['span', 'div', 'font']:
-        inline_tags = {'strong', 'em', 'a', 'img', 'hr'}
+        inline_tags = {'strong', 'em', 'a', 'img', 'hr', 'br'}
         if all(
             isinstance(child, NavigableString)
             or (isinstance(child, Tag) and child.name in inline_tags)
@@ -22,7 +22,7 @@ def convert_span_to_p(tag):
 def is_empty_tag(tag):
     if tag.name == 'img':
         return not tag.attrs.get('src')
-    if tag.name == 'hr':
+    if tag.name in ['hr', 'br']:
         return False
     text = tag.get_text().strip()
     return not text or text == '\xa0'
@@ -40,11 +40,13 @@ def unwrap_p_in_li(soup):
         for p in li.find_all('p'):
             p.unwrap()
 
-def unwrap_p_with_only_img(soup):
-    for p in soup.find_all('p'):
-        contents = [c for c in p.contents if not isinstance(c, NavigableString) or c.strip()]
-        if len(contents) == 1 and isinstance(contents[0], Tag) and contents[0].name == 'img':
-            p.unwrap()
+def wrap_img_in_p(soup):
+    for img in soup.find_all('img'):
+        parent = img.parent
+        if parent.name != 'p' or len(parent.contents) > 1:
+            new_p = soup.new_tag("p")
+            img.insert_before(new_p)
+            new_p.append(img.extract())
 
 def wrap_h3_content_in_em(soup):
     for h3 in soup.find_all('h3'):
@@ -86,15 +88,17 @@ def clean_html(raw_html):
         preserved_blocks.append((placeholder, str(div)))
         div.replace_with(placeholder)
 
+    # Preserve all standalone <iframe> tags
+    for i, iframe in enumerate(soup.find_all("iframe")):
+        placeholder = f"___IFRAME_TAG_PLACEHOLDER_{i}___"
+        preserved_blocks.append((placeholder, str(iframe)))
+        iframe.replace_with(placeholder)
+
+    # Convert span/font/div to <p> where appropriate
     for tag in soup.find_all():
-        if tag.name == 'br':
-            parent = tag.find_parent()
-            if parent and parent.name in ['h2', 'h3']:
-                continue  # keep <br> inside <h2> or <h3>
-            tag.decompose()
-            continue
         convert_span_to_p(tag)
 
+    # Remove unwanted attributes from allowed tags, unwrap disallowed tags
     for tag in soup.find_all():
         if tag.name in ALLOWED_TAGS:
             allowed_attrs = ALLOWED_ATTRS.get(tag.name, [])
@@ -105,6 +109,7 @@ def clean_html(raw_html):
         else:
             tag.unwrap()
 
+    # Remove empty allowed tags (but preserve <img> inside them)
     for tag in soup.find_all():
         if tag.name in ALLOWED_TAGS and is_empty_tag(tag):
             if tag.find('img'):
@@ -113,16 +118,20 @@ def clean_html(raw_html):
 
     flatten_nested_tags(soup)
     unwrap_p_in_li(soup)
-    unwrap_p_with_only_img(soup)
     wrap_h3_content_in_em(soup)
     add_beta_classes(soup)
+    wrap_img_in_p(soup)  # ✅ NEW unified image wrapper
 
     html = str(soup)
     lines = html.splitlines()
     cleaned_lines = [line.strip() for line in lines if line.strip()]
     html_minified = '\n'.join(cleaned_lines)
 
+    # Restore preserved HTML blocks
     for placeholder, content in preserved_blocks:
         html_minified = html_minified.replace(placeholder, content)
+
+    # Normalize <br/> back to <br> just before output
+    html_minified = html_minified.replace('<br/>', '<br>').replace('<br />', '<br>')
 
     return html_minified
