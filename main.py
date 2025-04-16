@@ -21,7 +21,7 @@ df['description'] = df['description'].fillna('')
 df = df[~df['product_code'].isin(gsheets_data['ean'])]
 df = df[~df['product_code'].str.contains('szablon-aukcji', case=False, na=False)]
 # Filter for specific producers
-mask = df['producer'].str.contains('Fixed|Urban Armor Gear|Karl Lagerfeld|Guess|Adidas|Apple|Samsung', case=False, na=False)
+mask = df['producer'].str.contains('Tactical', case=False, na=False)
 
 print('🛠️ Creating copy with cleaned descriptions...')
 all_outlets = df[mask].copy()

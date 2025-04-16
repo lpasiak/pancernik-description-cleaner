@@ -94,6 +94,12 @@ def remove_empty_paragraphs(soup):
             logger.info(f"Removing empty paragraph: {p}")
             p.decompose()
 
+def unwrap_strong_inside_headings(soup):
+    for tag in soup.find_all(['h2', 'h3']):
+        for strong in tag.find_all('strong'):
+            logger.info(f"Unwrapping <strong> inside <{tag.name}>: {strong}")
+            strong.unwrap()
+
 def clean_html(raw_html, product_code=None):
     logger.info(f"--- Cleaning started for product: {product_code} ---")
 
@@ -141,6 +147,7 @@ def clean_html(raw_html, product_code=None):
 
     flatten_nested_tags(soup)
     unwrap_p_in_li(soup)
+    unwrap_strong_inside_headings(soup)
     wrap_h3_content_in_em(soup)
     add_beta_classes(soup)
     wrap_img_in_p(soup)
