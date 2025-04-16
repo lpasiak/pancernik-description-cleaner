@@ -1,11 +1,32 @@
 from bs4 import BeautifulSoup, NavigableString, Tag
 import os
+import logging
+from datetime import datetime
 
 # Allowed tags and attributes
 ALLOWED_TAGS = {'h2', 'h3', 'p', 'strong', 'em', 'img', 'hr', 'ul', 'li', 'br'}
 ALLOWED_ATTRS = {
     'img': ['src', 'alt']
 }
+
+def setup_logger():
+    logs_dir = 'logs'
+    os.makedirs(logs_dir, exist_ok=True)
+    timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    filename = f'clean_html_log-{timestamp}.txt'
+    log_path = os.path.join(logs_dir, filename)
+
+    logger = logging.getLogger('cleaner')
+    logger.setLevel(logging.INFO)
+
+    if not logger.handlers:
+        file_handler = logging.FileHandler(log_path, mode='w', encoding='utf-8')
+        file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+        logger.addHandler(file_handler)
+
+    return logger
+
+logger = setup_logger()
 
 def convert_span_to_p(tag):
     if tag.name in ['span', 'div', 'font']:
@@ -25,7 +46,7 @@ def is_empty_tag(tag):
     if tag.name in ['hr', 'br']:
         return False
     text = tag.get_text().strip()
-    return not text or text == '\xa0'
+    return not text or text.isspace()
 
 def flatten_nested_tags(soup):
     for outer_p in soup.find_all('p'):
@@ -67,71 +88,72 @@ def add_beta_classes(soup):
             if beta_class not in existing_classes:
                 tag['class'] = existing_classes + [beta_class]
 
-def clean_html(raw_html):
-    # Normalize self-closing <br/> and <hr/> to standard <br> and <hr>
+def remove_empty_paragraphs(soup):
+    for p in soup.find_all("p"):
+        if not p.get_text(strip=True) and not p.find("img"):
+            logger.info(f"Removing empty paragraph: {p}")
+            p.decompose()
+
+def clean_html(raw_html, product_code=None):
+    logger.info(f"--- Cleaning started for product: {product_code} ---")
+
     raw_html = raw_html.replace('<br/>', '<br>').replace('<br />', '<br>')
     raw_html = raw_html.replace('<hr/>', '<hr>').replace('<hr />', '<hr>')
-
     soup = BeautifulSoup(raw_html, "html.parser")
-
     preserved_blocks = []
 
-    # Preserve all .product-info blocks
-    for i, div in enumerate(soup.find_all("div", class_="product-info")):
-        placeholder = f"___PRODUCT_INFO_PLACEHOLDER_{i}___"
-        preserved_blocks.append((placeholder, str(div)))
-        div.replace_with(placeholder)
+    def preserve_blocks(tag_class, label):
+        for i, div in enumerate(soup.find_all("div", class_=tag_class)):
+            placeholder = f"___{label.upper()}_PLACEHOLDER_{i}___"
+            preserved_blocks.append((placeholder, str(div)))
+            div.replace_with(placeholder)
+            logger.info(f"Preserved <div class='{tag_class}'> as {placeholder}")
 
-    # Preserve all .fx-iframeContainer blocks
-    for i, div in enumerate(soup.find_all("div", class_="fx-iframeContainer")):
-        placeholder = f"___IFRAME_CONTAINER_PLACEHOLDER_{i}___"
-        preserved_blocks.append((placeholder, str(div)))
-        div.replace_with(placeholder)
+    preserve_blocks("product-info", "product_info")
+    preserve_blocks("fx-iframeContainer", "iframe_container")
 
-    # Preserve all standalone <iframe> tags
     for i, iframe in enumerate(soup.find_all("iframe")):
         placeholder = f"___IFRAME_TAG_PLACEHOLDER_{i}___"
         preserved_blocks.append((placeholder, str(iframe)))
         iframe.replace_with(placeholder)
+        logger.info(f"Preserved <iframe> as {placeholder}")
 
-    # Convert span/font/div to <p> where appropriate
     for tag in soup.find_all():
         convert_span_to_p(tag)
 
-    # Remove unwanted attributes from allowed tags, unwrap disallowed tags
     for tag in soup.find_all():
         if tag.name in ALLOWED_TAGS:
             allowed_attrs = ALLOWED_ATTRS.get(tag.name, [])
-            allowed_attrs_lower = [a.lower() for a in allowed_attrs]
             for attr in list(tag.attrs):
-                if attr.lower() not in allowed_attrs_lower:
+                if attr.lower() not in allowed_attrs:
                     del tag.attrs[attr]
+                    logger.info(f"Removed disallowed attribute '{attr}' from <{tag.name}>")
         else:
             tag.unwrap()
+            logger.info(f"Unwrapped disallowed tag <{tag.name}>")
 
-    # Remove empty allowed tags (but preserve <img> inside them)
     for tag in soup.find_all():
         if tag.name in ALLOWED_TAGS and is_empty_tag(tag):
             if tag.find('img'):
                 continue
             tag.decompose()
+            logger.info(f"Removed empty <{tag.name}> tag")
 
     flatten_nested_tags(soup)
     unwrap_p_in_li(soup)
     wrap_h3_content_in_em(soup)
     add_beta_classes(soup)
-    wrap_img_in_p(soup)  # ✅ NEW unified image wrapper
+    wrap_img_in_p(soup)
+    remove_empty_paragraphs(soup)
 
     html = str(soup)
     lines = html.splitlines()
     cleaned_lines = [line.strip() for line in lines if line.strip()]
     html_minified = '\n'.join(cleaned_lines)
 
-    # Restore preserved HTML blocks
     for placeholder, content in preserved_blocks:
         html_minified = html_minified.replace(placeholder, content)
 
-    # Normalize <br/> back to <br> just before output
     html_minified = html_minified.replace('<br/>', '<br>').replace('<br />', '<br>')
-
+    logger.info(f"Finished cleaning product: {product_code}\n")
     return html_minified
