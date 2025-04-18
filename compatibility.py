@@ -1,4 +1,4 @@
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, NavigableString, Tag
 import pandas as pd
 
 def extract_h3_from_descriptions(input_file, output_file):
@@ -11,17 +11,17 @@ def extract_h3_from_descriptions(input_file, output_file):
 
         # All <h3>
         h3_tags = soup.find_all('h3')
-        h3_texts = [tag.get_text(strip=True) for tag in h3_tags]
+        h3_texts = [tag.decode_contents() for tag in h3_tags]  # 🔁 CHANGED HERE
 
         # Only <h3 class="h3-beta">
         h3_beta_tags = soup.find_all('h3', class_='h3-beta')
-        h3_beta_texts = [tag.get_text(strip=True) for tag in h3_beta_tags]
+        h3_beta_texts = [tag.decode_contents() for tag in h3_beta_tags]  # 🔁 AND HERE
 
         return pd.Series({
             'extracted_h3': ' | '.join(h3_texts),
             'h3_count': len(h3_tags),
             'extracted_h3_beta': ' | '.join(h3_beta_texts),
-            'h3_beta_count': len(h3_beta_texts)
+            'h3_beta_count': len(h3_beta_tags)
         })
 
     print("🔍 Extracting <h3> tags and filtering class='h3-beta'...")
