@@ -1,37 +1,79 @@
-import os
 import pandas as pd
 from functions import clean_html
+from compatibility import extract_h3_from_descriptions
 
-# File paths
-input_file = 'data/all_offers.csv'
-output_file = 'end_data/all_offers_ready.xlsx'
 
-# Google Sheets with processed codes
-gsheets_url = 'https://docs.google.com/spreadsheets/d/1rz6QThoRfEreZWRczP0B8tuZoorVvSZlC7qWwryi-o0/export?format=csv'
-gsheets_data = pd.read_csv(gsheets_url)
+def generate_clean_empty_descriptions():
 
-print('📥 Reading the input file...')
-df = pd.read_csv(input_file, delimiter=';')
+    pancernik_input_file = 'data/pancernik_empty_offers.csv'
+    bizon_input_file = 'data/bizon_empty_offers.csv'
+    bewoodgrizz_input_file = 'data/bewoodgrizz_empty_offers.csv'
 
-# Fill missing values
-df['producer'] = df['producer'].fillna('')
-df['description'] = df['description'].fillna('')
+    pancernik_output_file = 'end_data/pancernik_empty_offers-result.xlsx'
+    bizon_output_file = 'end_data/bizon_empty_offers-result.xlsx'
+    bewoodgrizz_output_file = 'end_data/bewoodgrizz_empty_offers-result.xlsx'
 
-# Exclude already processed product codes
-df = df[~df['product_code'].isin(gsheets_data['ean'])]
-df = df[~df['product_code'].str.contains('szablon-aukcji', case=False, na=False)]
-# Filter for specific producers
-mask = df['producer'].str.contains('Tactical', case=False, na=False)
+    df_pancernik = pd.read_csv(pancernik_input_file, delimiter=';')
+    df_bizon = pd.read_csv(bizon_input_file, delimiter=';')
+    df_bewoodgrizz = pd.read_csv(bewoodgrizz_input_file, delimiter=';')
 
-print('🛠️ Creating copy with cleaned descriptions...')
-all_outlets = df[mask].copy()
+    df_pancernik['new_description'] = df_pancernik.apply(
+        lambda row: clean_html(row['Opis PL'], product_code=row['Seria']),
+        axis=1
+    )
 
-# Apply clean_html with logging per product_code
-all_outlets['new_description'] = all_outlets.apply(
-    lambda row: clean_html(row['description'], product_code=row['product_code']),
-    axis=1
+    df_bizon['new_description'] = df_bizon.apply(
+        lambda row: clean_html(row['Opis Shoper'], product_code=row['Seria - Kolor']),
+        axis=1
+    )
+
+    df_bewoodgrizz['new_description'] = df_bewoodgrizz.apply(
+        lambda row: clean_html(row['Shoper PL'], product_code=row['Seria']),
+        axis=1
+    )
+
+    df_pancernik.to_excel(pancernik_output_file, index=False)
+    df_bizon.to_excel(bizon_output_file, index=False)
+    df_bewoodgrizz.to_excel(bewoodgrizz_output_file, index=False)
+
+def generate_clean_descriptions():
+
+    # File paths
+    input_file = 'data/all_offers.csv'
+    output_file = 'end_data/all_offers_ready.xlsx'
+
+    # Google Sheets with processed codes
+    gsheets_url = 'https://docs.google.com/spreadsheets/d/1rz6QThoRfEreZWRczP0B8tuZoorVvSZlC7qWwryi-o0/export?format=csv'
+    gsheets_data = pd.read_csv(gsheets_url)
+
+    print('📥 Reading the input file...')
+    df = pd.read_csv(input_file, delimiter=';')
+
+    # Fill missing values
+    df['producer'] = df['producer'].fillna('')
+    df['description'] = df['description'].fillna('')
+
+    # Exclude already processed product codes
+    df = df[~df['product_code'].isin(gsheets_data['ean'])]
+    df = df[~df['product_code'].str.contains('szablon-aukcji', case=False, na=False)]
+
+    # Filter for specific producers
+    mask = df['description'].str.contains('<span', case=False, na=False)
+
+    print('🛠️ Creating copy with cleaned descriptions...')
+    products_to_change = df[mask].copy()
+
+    # Apply clean_html with logging per product_code
+    products_to_change['new_description'] = products_to_change.apply(
+        lambda row: clean_html(row['description'], product_code=row['product_code']),
+        axis=1
+    )
+
+    print(f'💾 Saving {len(products_to_change)} to Excel...')
+    products_to_change.to_excel(output_file, index=False)
+    print('✅ Finished!')
+
+extract_h3_from_descriptions(
+    input_file='data/all_offers.csv',
+    output_file='end_data/extracted_h3_values.xlsx'
 )
-
-print(f'💾 Saving {len(all_outlets)} to Excel...')
-all_outlets.to_excel(output_file, index=False)
-print('✅ Finished!')
