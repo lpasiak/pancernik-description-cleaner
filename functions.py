@@ -4,9 +4,10 @@ import logging
 from datetime import datetime
 
 # Allowed tags and attributes
-ALLOWED_TAGS = {'h2', 'h3', 'p', 'strong', 'em', 'img', 'hr', 'ul', 'li', 'br'}
+ALLOWED_TAGS = {'h2', 'h3', 'p', 'strong', 'em', 'img', 'hr', 'ul', 'li', 'br', 'a'}
 ALLOWED_ATTRS = {
-    'img': ['src', 'alt']
+    'img': ['src', 'alt'],
+    'a': ['href', 'target']
 }
 
 def setup_logger():

@@ -39,11 +39,11 @@ def generate_clean_empty_descriptions():
 def generate_clean_descriptions():
 
     # File paths
-    input_file = 'data/all_offers.csv'
-    output_file = 'end_data/all_offers_ready.xlsx'
+    input_file = 'data/all_offers_fix.csv'
+    output_file = 'end_data/all_offers_fix_ready.xlsx'
 
     # Google Sheets with processed codes
-    gsheets_url = 'https://docs.google.com/spreadsheets/d/1rz6QThoRfEreZWRczP0B8tuZoorVvSZlC7qWwryi-o0/export?format=csv'
+    gsheets_url = 'https://docs.google.com/spreadsheets/d/1rz6QThoRfEreZWRczP0B8tuZoorVvSZlC7qWwryi-o0/export?format=csv&gid=0'
     gsheets_data = pd.read_csv(gsheets_url)
 
     print('📥 Reading the input file...')
@@ -52,6 +52,9 @@ def generate_clean_descriptions():
     # Fill missing values
     df['producer'] = df['producer'].fillna('')
     df['description'] = df['description'].fillna('')
+
+    gsheets_data['ean'] = gsheets_data['ean'].astype(str)
+    df['product_code'] = df['product_code'].astype(str)
 
     # Exclude already processed product codes
     df = df[~df['product_code'].isin(gsheets_data['ean'])]
