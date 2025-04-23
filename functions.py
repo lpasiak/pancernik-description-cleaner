@@ -7,7 +7,9 @@ from datetime import datetime
 ALLOWED_TAGS = {'h2', 'h3', 'p', 'strong', 'em', 'img', 'hr', 'ul', 'li', 'br', 'a'}
 ALLOWED_ATTRS = {
     'img': ['src', 'alt'],
-    'a': ['href', 'target']
+    'a': ['href', 'target'],
+    'p': ['class', 'id'],
+    'h2': ['class', 'id']
 }
 
 def setup_logger():
