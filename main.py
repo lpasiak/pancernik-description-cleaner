@@ -73,9 +73,9 @@ def generate_clean_descriptions():
     products_to_change.to_excel(output_file, index=False)
     print('✅ Finished!')
 
-# generate_clean_descriptions()
+generate_clean_descriptions()
 
-extract_h3_from_descriptions(
-    input_file='data/all_offers.csv',
-    output_file='end_data/extracted_h3_values.xlsx'
-)
+# extract_h3_from_descriptions(
+#     input_file='data/all_offers.csv',
+#     output_file='end_data/extracted_h3_values.xlsx'
+# )

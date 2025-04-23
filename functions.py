@@ -45,8 +45,14 @@ def is_empty_tag(tag):
         return not tag.attrs.get('src')
     if tag.name in ['hr', 'br']:
         return False
-    text = tag.get_text().strip()
-    return not text or text.isspace()
+
+    # If the tag has any non-whitespace NavigableString or any child Tag (like <br>), it's not empty
+    for child in tag.children:
+        if isinstance(child, Tag):
+            return False  # it has nested tags (like <br>), keep it
+        if isinstance(child, NavigableString) and child.strip():
+            return False  # it has visible text
+    return True
 
 def flatten_nested_tags(soup):
     for outer_p in soup.find_all('p'):
@@ -74,10 +80,12 @@ def wrap_h3_content_in_em(soup):
         contents = h3.contents
         if len(contents) == 1 and isinstance(contents[0], Tag) and contents[0].name == 'em':
             continue
-        text = h3.get_text(strip=True)
+
+        inner_html = h3.decode_contents()  # ✅ preserves <br> and any nested tags
         h3.clear()
+
         em = soup.new_tag('em')
-        em.string = text
+        em.append(BeautifulSoup(inner_html, 'html.parser'))  # ✅ parse back into Tag structure
         h3.append(em)
 
 def add_beta_classes(soup):
