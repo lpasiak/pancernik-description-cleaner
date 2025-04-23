@@ -4,7 +4,7 @@ import logging
 from datetime import datetime
 
 # Allowed tags and attributes
-ALLOWED_TAGS = {'h2', 'h3', 'p', 'strong', 'em', 'img', 'hr', 'ul', 'li', 'br', 'a'}
+ALLOWED_TAGS = {'h2', 'h3', 'p', 'strong', 'em', 'img', 'hr', 'ul', 'li', 'br', 'a', 'iframe'}
 ALLOWED_ATTRS = {
     'img': ['src', 'alt'],
     'a': ['href', 'target'],
