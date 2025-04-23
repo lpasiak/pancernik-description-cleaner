@@ -154,11 +154,23 @@ def clean_html(raw_html, product_code=None):
             tag.decompose()
             logger.info(f"Removed empty <{tag.name}> tag")
 
+    def remove_consecutive_brs(soup):
+        for tag in soup.find_all():
+            prev = None
+            for child in list(tag.children):
+                if isinstance(child, Tag) and child.name == 'br':
+                    if isinstance(prev, Tag) and prev.name == 'br':
+                        logger.info(f"Removed consecutive <br> inside <{tag.name}>")
+                        child.decompose()
+                        continue
+                prev = child
+
     flatten_nested_tags(soup)
     unwrap_p_in_li(soup)
     unwrap_strong_inside_headings(soup)
     wrap_h3_content_in_em(soup)
     add_beta_classes(soup)
+    remove_consecutive_brs(soup)
     wrap_img_in_p(soup)
     remove_empty_paragraphs(soup)
 
