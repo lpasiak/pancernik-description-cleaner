@@ -91,14 +91,6 @@ def wrap_h3_content_in_em(soup):
         em.append(BeautifulSoup(inner_html, 'html.parser'))  # ✅ parse back into Tag structure
         h3.append(em)
 
-def add_beta_classes(soup):
-    for tag_name in ALLOWED_TAGS:
-        for tag in soup.find_all(tag_name):
-            beta_class = f"{tag_name}-beta"
-            existing_classes = tag.get("class", [])
-            if beta_class not in existing_classes:
-                tag['class'] = existing_classes + [beta_class]
-
 def remove_empty_paragraphs(soup):
     for p in soup.find_all("p"):
         if not p.get_text(strip=True) and not p.find("img"):
@@ -171,7 +163,6 @@ def clean_html(raw_html, product_code=None):
     unwrap_p_in_li(soup)
     unwrap_strong_inside_headings(soup)
     wrap_h3_content_in_em(soup)
-    add_beta_classes(soup)
     remove_consecutive_brs(soup)
     wrap_img_in_p(soup)
     remove_empty_paragraphs(soup)
@@ -187,3 +178,16 @@ def clean_html(raw_html, product_code=None):
     html_minified = html_minified.replace('<br/>', '<br>').replace('<br />', '<br>')
     logger.info(f"Finished cleaning product: {product_code}\n")
     return html_minified
+
+def remove_beta_classes(html: str) -> str:
+    soup = BeautifulSoup(html, "html.parser")
+
+    for tag in soup.find_all(True):  # True = all tags
+        classes = tag.get("class", [])
+        filtered_classes = [cls for cls in classes if not cls.endswith("-beta")]
+        if classes != filtered_classes:
+            tag['class'] = filtered_classes
+            if not tag['class']:
+                del tag['class']  # remove empty class attribute
+
+    return str(soup)
