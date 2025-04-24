@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup, NavigableString, Tag
 import pandas as pd
+import re
 
 def extract_h3_from_descriptions(input_file, output_file):
     print("📥 Reading input file...")
@@ -40,18 +41,15 @@ def extract_h3_from_descriptions(input_file, output_file):
             combined = ''.join(
                 frag if 'br' in frag else f"{frag}<br>"
                 for frag in merged_items
-            ).rstrip('<br>')
+            )
+
+            # 🧼 Remove consecutive <br> or <br/> or <br /> — keep only one
+            combined = re.sub(r'(<br\s*/?>\s*){2,}', '<br>', combined).rstrip('<br>')
+
             unified_h3 = f'<h3><em>{combined}</em></h3>'
         else:
             unified_h3 = ''
 
-        return pd.Series({
-            'extracted_h3': ' | '.join(h3_inner),
-            'raw_h3_tags': ' | '.join(h3_full_html),
-            'h3_count': len(h3_tags),
-            'h2_count': len(h2_tags),
-            'unified_h3': unified_h3
-        })
 
     # def prettify_html(html):
     #     soup = BeautifulSoup(html, "html.parser")
@@ -61,7 +59,7 @@ def extract_h3_from_descriptions(input_file, output_file):
     h3_data = df['description'].apply(extract_h3_data)
 
     # df['pretty_description'] = df['description'].apply(prettify_html)
-    
+
     df = pd.concat([df, h3_data], axis=1)
 
     print(f"💾 Saving to: {output_file}")

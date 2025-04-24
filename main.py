@@ -2,7 +2,6 @@ import pandas as pd
 from functions import clean_html, remove_beta_classes
 from compatibility import extract_h3_from_descriptions
 
-
 def generate_clean_empty_descriptions():
 
     pancernik_input_file = 'data/pancernik_empty_offers.csv'
@@ -55,9 +54,11 @@ def generate_clean_descriptions(input_file, output_file):
     # Exclude already processed product codes
     # df = df[~df['product_code'].isin(gsheets_data['ean'])]
     df = df[~df['product_code'].str.contains('szablon-aukcji', case=False, na=False)]
+    df = df[~df['description'].str.contains('class="product-info"', case=False, na=False)]
 
     # Filter for specific producers
-    mask = df['description'].str.contains('<span', case=False, na=False)
+    mask = df['description'].str.contains('font-size', case=False, na=False)
+    
 
     print('🛠️ Creating copy with cleaned descriptions...')
     products_to_change = df[mask].copy()
@@ -80,26 +81,30 @@ def generate_cleaned_descriptions_csv_to_xlsx():
     df = pd.read_csv(input_file, delimiter=';')
     df['description'] = df['description'].fillna('')
 
+    mask = df['description'].str.contains('-beta', case=False, na=False)
+
+    print('🛠️ Creating copy with cleaned descriptions...')
+    products_to_change = df[mask].copy()
+
     print("🧹 Cleaning HTML in 'description' column...")
-    df['new_description'] = df.apply(
+    products_to_change['new_description'] = products_to_change.apply(
         lambda row: remove_beta_classes(row['description']),
         axis=1
     )
 
     print("💾 Saving to Excel...")
-    df.to_excel(output_file, index=False)
+    products_to_change.to_excel(output_file, index=False)
     print(f"✅ Done! Saved to {output_file}")
 
 # Run it
-generate_cleaned_descriptions_csv_to_xlsx()
+# generate_cleaned_descriptions_csv_to_xlsx()
 
-
-# generate_clean_descriptions(
-#     input_file='data/all_offers.csv',
-#     output_file = 'end_data/all_offers_ready.xlsx'
-# )
-
-extract_h3_from_descriptions(
+generate_clean_descriptions(
     input_file='data/all_offers.csv',
-    output_file='end_data/extracted_h3_values.xlsx'
+    output_file = 'end_data/all_offers_ready.xlsx'
 )
+
+# extract_h3_from_descriptions(
+#     input_file='data/all_offers.csv',
+#     output_file='end_data/extracted_h3_values.xlsx'
+# )
