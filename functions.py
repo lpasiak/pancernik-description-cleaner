@@ -9,8 +9,11 @@ ALLOWED_ATTRS = {
     'img': ['src', 'alt'],
     'a': ['href', 'target'],
     'p': ['class', 'id'],
-    'h2': ['class', 'id']
+    'h2': ['class', 'id'],
 }
+
+#<div class="compat-wrapper"><input id="compat-toggle-1" class="compat-toggle" type="checkbox" />
+# <div class="compat-content">
 
 def setup_logger():
     logs_dir = 'logs'

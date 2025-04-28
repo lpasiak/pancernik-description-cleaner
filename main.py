@@ -96,15 +96,14 @@ def generate_cleaned_descriptions_csv_to_xlsx():
     products_to_change.to_excel(output_file, index=False)
     print(f"✅ Done! Saved to {output_file}")
 
-# Run it
-# generate_cleaned_descriptions_csv_to_xlsx()
+generate_cleaned_descriptions_csv_to_xlsx()
 
 generate_clean_descriptions(
     input_file='data/all_offers.csv',
     output_file = 'end_data/all_offers_ready.xlsx'
 )
 
-# extract_h3_from_descriptions(
-#     input_file='data/all_offers.csv',
-#     output_file='end_data/extracted_h3_values.xlsx'
-# )
+extract_h3_from_descriptions(
+    input_file='data/all_offers.csv',
+    output_file='end_data/extracted_h3_values.xlsx'
+)
