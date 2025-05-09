@@ -54,7 +54,7 @@ def generate_clean_descriptions(input_file, output_file):
     # Exclude already processed product codes
     # df = df[~df['product_code'].isin(gsheets_data['ean'])]
     df = df[~df['product_code'].str.contains('szablon-aukcji', case=False, na=False)]
-    df = df[~df['description'].str.contains('<span', case=False, na=False)]
+    # df = df[~df['description'].str.contains('', case=False, na=False)]
 
     # Filter for specific producers
     mask = df['description'].str.contains('font-size', case=False, na=False)
@@ -64,10 +64,11 @@ def generate_clean_descriptions(input_file, output_file):
     products_to_change = df[mask].copy()
 
     # Apply clean_html with logging per product_code
-    products_to_change['new_description'] = products_to_change.apply(
+    new_cols = products_to_change.apply(
         lambda row: clean_html(row['description'], product_code=row['product_code']),
         axis=1
     )
+    products_to_change = pd.concat([products_to_change, new_cols], axis=1)
 
     print(f'💾 Saving {len(products_to_change)} to Excel...')
     products_to_change.to_excel(output_file, index=False)

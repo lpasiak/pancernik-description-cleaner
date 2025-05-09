@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup, NavigableString, Tag
 import os
 import logging
 from datetime import datetime
+import pandas as pd
 
 # Allowed tags and attributes
 ALLOWED_TAGS = {'h2', 'h3', 'p', 'strong', 'em', 'img', 'hr', 'ul', 'li', 'br', 'a', 'iframe'}
@@ -180,7 +181,9 @@ def clean_html(raw_html, product_code=None):
 
     html_minified = html_minified.replace('<br/>', '<br>').replace('<br />', '<br>')
     logger.info(f"Finished cleaning product: {product_code}\n")
-    return html_minified
+    return pd.Series({
+        'new_description': html_minified
+    })
 
 def remove_beta_classes(html: str) -> str:
     soup = BeautifulSoup(html, "html.parser")
