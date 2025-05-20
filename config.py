@@ -34,7 +34,7 @@ GOOGLE_SHEETS = {
 # HTML cleaning configuration
 ALLOWED_TAGS: Set[str] = {
     'h2', 'h3', 'p', 'strong', 'em', 'img', 'hr', 'ul', 'ol', 'li', 
-    'br', 'a', 'iframe', 'summary', 'details', 'div', 'section'
+    'br', 'a', 'iframe', 'summary', 'details', 'section'
 }
 
 ALLOWED_ATTRS: Dict[str, List[str]] = {

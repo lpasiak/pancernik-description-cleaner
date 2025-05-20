@@ -113,7 +113,7 @@ def generate_clean_descriptions(input_file: str, output_file: str):
 
         # Filtering
         df = df[~df['title'].str.contains('|'.join(EXCLUDED_PRODUCTS), case=False, na=False)]
-        mask = df['description'].str.contains('Bizon', case=False, na=False)
+        mask = df['description'].str.contains('<span', case=False, na=False)
         products_to_change = df[mask].copy()
 
         logger.info('Creating copy with cleaned descriptions...')
